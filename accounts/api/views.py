@@ -6,7 +6,6 @@ from accounts.api.serializers import (
     LoginSerializer,
     SignupSerializer,
 )
-
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.contrib.auth import (
@@ -51,18 +50,8 @@ class AccountViewSet(viewsets.ViewSet):
                 'errors': serializer.errors
             }, status=400)
 
-        username = serializer.validated_data['username'].lower()
+        username = serializer.validated_data['username']
         password = serializer.validated_data['password']
-        if not User.objects.filter(username=username).exists():
-            return Response({
-                'success': False,
-                'message': 'Please check input.',
-                'errors': {
-                    'username': [
-                        'User does not exist.'
-                    ]
-                }
-            }, status=400)
 
         user = django_authenticate(username=username, password=password)
         if not user or user.is_anonymous:

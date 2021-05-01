@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers, exceptions
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -11,6 +10,14 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
+
+    def validate(self, attrs):
+        if not User.objects.filter(username=attrs['username'].lower()).exists():
+            raise exceptions.ValidationError({
+                'username': 'User does not exist.'
+            })
+        attrs['username'] = attrs['username'].lower()
+        return attrs
 
 
 class SignupSerializer(serializers.ModelSerializer):
