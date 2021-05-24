@@ -11,7 +11,6 @@ LOGIN_STATUS_URL = '/api/accounts/login_status/'
 
 class AccountApiTests(TestCase):
     def setUp(self):
-        self.client = APIClient()
         self.user = self.create_user(
             username='admin',
             email='admin@django.com',

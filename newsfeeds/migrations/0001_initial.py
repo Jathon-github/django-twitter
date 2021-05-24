@@ -10,21 +10,23 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('tweets', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Friendship',
+            name='NewsFeed',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('from_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='following_friendship_set', to=settings.AUTH_USER_MODEL)),
-                ('to_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='follower_friendship_set', to=settings.AUTH_USER_MODEL)),
+                ('tweet', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='tweets.tweet')),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'unique_together': {('from_user_id', 'to_user_id')},
-                'index_together': {('from_user_id', 'created_at'), ('to_user_id', 'created_at')},
+                'ordering': ('-created_at',),
+                'unique_together': {('user', 'tweet')},
+                'index_together': {('user', 'created_at')},
             },
         ),
     ]
