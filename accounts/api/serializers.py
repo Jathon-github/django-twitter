@@ -20,6 +20,12 @@ class UserSerializerForFriendship(serializers.ModelSerializer):
         fields = ('id', 'username')
 
 
+class UserSerializerForComment(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username')
+
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
