@@ -56,7 +56,6 @@ class CommentApiTest(TestCase):
         url = COMMENT_DETAIL_URL.format(comment.id)
 
         response = self.anonymous_client.delete(url)
-        print(response)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         response = self.user2_client.delete(url)
