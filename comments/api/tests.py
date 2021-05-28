@@ -1,9 +1,11 @@
 from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
+from comments.models import Comment
 
 
 COMMENT_URL = '/api/comments/'
+COMMENT_DETAIL_URL = '/api/comments/{}/'
 
 
 class CommentApiTest(TestCase):
@@ -48,3 +50,19 @@ class CommentApiTest(TestCase):
             'content': 'comment',
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_destroy(self):
+        comment = self.create_comment(self.user1, self.tweet)
+        url = COMMENT_DETAIL_URL.format(comment.id)
+
+        response = self.anonymous_client.delete(url)
+        print(response)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.user2_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        count = Comment.objects.count()
+        response = self.user1_client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Comment.objects.count(), count - 1)

@@ -1,19 +1,23 @@
 from rest_framework import viewsets, status
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from comments.api.serializers import (
-    CommentSerializerForCreate,
     CommentSerializer,
+    CommentSerializerForCreate,
 )
+from comments.api.permissions import IsObjectOwner
+from comments.models import Comment
 
 
-# Create your views here.
 class CommentViewSet(viewsets.GenericViewSet):
     serializer_class = CommentSerializerForCreate
+    queryset = Comment.objects.all()
 
     def get_permissions(self):
         if self.action == 'create':
             return [IsAuthenticated()]
+        if self.action == 'destroy':
+            return [IsAuthenticated(), IsObjectOwner()]
         return [AllowAny()]
 
     def create(self, request):
@@ -34,3 +38,9 @@ class CommentViewSet(viewsets.GenericViewSet):
         return Response({
             'comment': CommentSerializer(comment).data,
         }, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, pk):
+        self.get_object().delete()
+        return Response({
+            'success': True
+        }, status=status.HTTP_200_OK)
