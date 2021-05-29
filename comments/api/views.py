@@ -12,6 +12,7 @@ from comments.models import Comment
 class CommentViewSet(viewsets.GenericViewSet):
     serializer_class = CommentSerializerForCreate
     queryset = Comment.objects.all()
+    filterset_fields = ('tweet_id',)
 
     def get_permissions(self):
         if self.action == 'create':
@@ -19,6 +20,22 @@ class CommentViewSet(viewsets.GenericViewSet):
         if self.action == 'destroy':
             return [IsAuthenticated(), IsObjectOwner()]
         return [AllowAny()]
+
+    def list(self, request):
+        if 'tweet_id' not in request.query_params:
+            return Response({
+                'message': 'missing tweet_id in request',
+                'success': False,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # tweet_id = request.query_params['tweet_id']
+        # comments = Comment.objects.filter(tweet_id=tweet_id).order_by('created_at')
+        comments = self.filter_queryset(self.get_queryset()).order_by('created_at')
+        serializer = CommentSerializer(comments, many=True)
+        return Response({
+            'comments': serializer.data,
+            'success': True,
+        }, status=status.HTTP_200_OK)
 
     def create(self, request):
         data = {

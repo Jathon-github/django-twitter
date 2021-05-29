@@ -20,12 +20,39 @@ class CommentApiTest(TestCase):
 
         self.tweet = self.create_tweet(self.user1)
 
+    def test_list(self):
+        response = self.anonymous_client.get(COMMENT_URL)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['comments']), 0)
+
+        self.create_comment(self.user1, self.tweet, 'first comment')
+        self.create_comment(self.user2, self.tweet, 'second comment')
+        self.create_comment(self.user2, self.create_tweet(self.user2), 'third comment')
+
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+        })
+        self.assertEqual(len(response.data['comments']), 2)
+        self.assertEqual(response.data['comments'][0]['content'], 'first comment')
+        self.assertEqual(response.data['comments'][1]['content'], 'second comment')
+
+        response = self.anonymous_client.get(COMMENT_URL, {
+            'tweet_id': self.tweet.id,
+            'user_id': self.user1.id,
+        })
+        self.assertEqual(len(response.data['comments']), 2)
+
     def test_create(self):
         response = self.anonymous_client.post(COMMENT_URL)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        response = self.user1_client.get(COMMENT_URL)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        # response = self.user1_client.get(COMMENT_URL)
+        # self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
         response = self.user1_client.post(COMMENT_URL)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

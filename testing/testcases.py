@@ -35,4 +35,4 @@ class TestCase(DjangoTestCase):
         if content is None:
             content = 'default comment content'
 
-        return Comment.objects.create(user=user, content=content)
+        return Comment.objects.create(user=user, tweet=tweet, content=content)
