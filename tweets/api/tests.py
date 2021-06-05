@@ -1,9 +1,13 @@
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from tweets.models import Tweet
+from rest_framework import status
+
 
 TWEET_LIST_API = '/api/tweets/'
 TWEET_CREATE_API = '/api/tweets/'
+TWEET_RETRIEVE_API = '/api/tweets/{}/'
+
 
 class TestApiTests(TestCase):
     def setUp(self):
@@ -35,6 +39,23 @@ class TestApiTests(TestCase):
 
         self.assertEqual(response.data['tweets'][0]['id'], self.tweets2[1].id)
         self.assertEqual(response.data['tweets'][1]['id'], self.tweets2[0].id)
+
+    def test_retrieve_api(self):
+        response = self.anonymous_client.get(TWEET_RETRIEVE_API.format(-1))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        tweet = self.create_tweet(user=self.user1)
+        url = TWEET_RETRIEVE_API.format(tweet.id)
+
+        response = self.anonymous_client.get(url)
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # self.assertEqual(len(response.data['comments']), 0)
+        #
+        # self.create_comment(user=self.user1, tweet=tweet)
+        # self.create_comment(user=self.user2, tweet=tweet)
+        # self.create_comment(user=self.user2, tweet=self.create_tweet(user=self.user1))
+        # response = self.anonymous_client.get(url)
+        # self.assertEqual(len(response.data['comments']), 2)
 
     def test_create_api(self):
         response = self.anonymous_client.post(TWEET_CREATE_API)
