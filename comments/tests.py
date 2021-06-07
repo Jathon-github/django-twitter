@@ -1,10 +1,21 @@
 from testing.testcases import TestCase
 
 
-# Create your tests here.
 class CommentModelTest(TestCase):
+    def setUp(self):
+        self.user = self.create_user('user')
+        self.tweet = self.create_tweet(user=self.user, content='tweet')
+        self.comment = self.create_comment(self.user, self.tweet)
+
     def test_comment(self):
-        user = self.create_user('user')
-        tweet = self.create_tweet(user=user, content='tweet')
-        comment = self.create_comment(user, tweet)
-        self.assertNotEqual(comment.__str__(), None)
+        self.assertNotEqual(self.comment.__str__(), None)
+
+    def test_like_set(self):
+        self.create_like(self.user, self.comment)
+        self.assertEqual(self.comment.like_set.count(), 1)
+
+        self.create_like(self.user, self.comment)
+        self.assertEqual(self.comment.like_set.count(), 1)
+
+        self.create_like(self.create_user('other_user'), self.comment)
+        self.assertEqual(self.comment.like_set.count(), 2)
