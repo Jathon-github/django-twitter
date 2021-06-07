@@ -42,8 +42,8 @@ class TestCase(DjangoTestCase):
     def create_like(self, user, target):
         instance, _ = Like.objects.get_or_create(
             user=user,
-            content_type=ContentType.objects.filter(model=target.__class__.__name__)[0],
-            # content_type=ContentType.objects.get_for_model(target.__class__),
+            # content_type=ContentType.objects.filter(model=target.__class__.__name__)[0],
+            content_type=ContentType.objects.get_for_model(target.__class__),
             object_id=target.id,
         )
         return instance
