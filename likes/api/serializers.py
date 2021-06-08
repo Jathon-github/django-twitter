@@ -1,10 +1,10 @@
 from accounts.api.serializers import UserSerializer
 from comments.models import Comment
+from django.contrib.contenttypes.models import ContentType
 from likes.models import Like
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from tweets.models import Tweet
-from django.contrib.contenttypes.models import ContentType
 
 
 class LikeSerializer(serializers.ModelSerializer):
