@@ -1,11 +1,11 @@
 from newsfeeds.services import NewsFeedService
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from tweets.api.serializers import (
     TweetCreateSerializer,
     TweetSerializer,
-    TweetSerializerWithComments,
+    TweetSerializerForDetail,
 )
 from tweets.models import Tweet
 from utils.decorators import required_params
@@ -25,13 +25,19 @@ class TweetViewSet(viewsets.GenericViewSet):
         tweets = Tweet.objects.filter(
             user_id=request.query_params['user_id']
         ).order_by('-created_at')
-        serializer = TweetSerializer(tweets, many=True)
+        serializer = TweetSerializer(
+            tweets,
+            context={'request': request},
+            many=True,
+        )
         return Response({'tweets': serializer.data})
 
     def retrieve(self, request, pk):
-        tweet = self.get_object()
-        serializer = TweetSerializerWithComments(tweet)
-        return Response({'tweets': serializer.data})
+        serializer = TweetSerializerForDetail(
+            self.get_object(),
+            context={'request': request},
+        )
+        return Response({'tweet': serializer.data})
 
     def create(self, request):
         serializer = TweetCreateSerializer(
@@ -43,7 +49,10 @@ class TweetViewSet(viewsets.GenericViewSet):
                 'success': False,
                 'message': 'Please check input.',
                 'errors': serializer.errors
-            }, status=400)
+            }, status=status.HTTP_400_BAD_REQUEST)
         tweet = serializer.save()
         NewsFeedService.fanout_to_followers(tweet)
-        return Response(TweetSerializer(tweet).data, status=201)
+        return Response(
+            TweetSerializer(tweet, context={'request': request}).data,
+            status=status.HTTP_201_CREATED
+        )
