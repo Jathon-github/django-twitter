@@ -4,6 +4,10 @@ from rest_framework import status
 
 LIKE_BASE_URL = '/api/likes/'
 LIKE_CANCEL_URL = '/api/likes/cancel/'
+COMMENT_LIST_API = '/api/comments/'
+TWEET_LIST_API = '/api/tweets/'
+TWEET_DETAIL_API = '/api/tweets/{}/'
+NEWSFEED_LIST_API = '/api/newsfeeds/'
 
 
 class LikeApiTest(TestCase):
@@ -130,3 +134,29 @@ class LikeApiTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.tweet.like_set.count(), 0)
         self.assertEqual(self.comment.like_set.count(), 0)
+
+    def test_likes_in_comments_api(self):
+        # test anonymous
+        response = self.anonymous_client.get(COMMENT_LIST_API, {'tweet_id': self.tweet.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['comments'][0]['has_liked'], False)
+        self.assertEqual(response.data['comments'][0]['likes_count'], 0)
+
+        # test comments list api
+        response = self.user1_client.get(COMMENT_LIST_API, {'tweet_id': self.tweet.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['comments'][0]['has_liked'], False)
+        self.assertEqual(response.data['comments'][0]['likes_count'], 0)
+        self.create_like(self.user2, self.comment)
+        response = self.user1_client.get(COMMENT_LIST_API, {'tweet_id': self.tweet.id})
+        self.assertEqual(response.data['comments'][0]['has_liked'], False)
+        self.assertEqual(response.data['comments'][0]['likes_count'], 1)
+        response = self.user2_client.get(COMMENT_LIST_API, {'tweet_id': self.tweet.id})
+        self.assertEqual(response.data['comments'][0]['has_liked'], True)
+
+        # test tweet detail api
+        self.create_like(self.user1, self.comment)
+        response = self.user1_client.get(TWEET_DETAIL_API.format(self.tweet.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['tweet']['comments'][0]['has_liked'], True)
+        self.assertEqual(response.data['tweet']['comments'][0]['likes_count'], 2)
