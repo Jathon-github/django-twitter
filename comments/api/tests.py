@@ -1,22 +1,19 @@
 from testing.testcases import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
 from comments.models import Comment
 
 
 COMMENT_URL = '/api/comments/'
 COMMENT_DETAIL_URL = '/api/comments/{}/'
+TWEET_LIST_URL = '/api/tweets/'
+TWEET_DETAIL_URL = '/api/tweets/{}/'
+NEWSFEEDS_URL = '/api/newsfeeds/'
 
 
 class CommentApiTest(TestCase):
     def setUp(self):
-        self.user1 = self.create_user('user1')
-        self.user1_client = APIClient()
-        self.user1_client.force_authenticate(self.user1)
-
-        self.user2 = self.create_user('user2')
-        self.user2_client = APIClient()
-        self.user2_client.force_authenticate(self.user2)
+        self.user1, self.user1_client = self.create_user_and_client('user1')
+        self.user2, self.user2_client = self.create_user_and_client('user2')
 
         self.tweet = self.create_tweet(self.user1)
 
@@ -92,3 +89,18 @@ class CommentApiTest(TestCase):
         response = self.user1_client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Comment.objects.count(), count - 1)
+
+    def test_comment_count(self):
+        response = self.user2_client.get(TWEET_DETAIL_URL.format(self.tweet.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['tweet']['comments_count'], 0)
+
+        self.create_comment(self.user2, self.tweet)
+        response = self.user1_client.get(TWEET_LIST_URL, {'user_id': self.user1.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['tweets'][0]['comments_count'], 1)
+
+        self.create_comment(self.user1, self.tweet)
+        response = self.user1_client.get(NEWSFEEDS_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['newsfeeds'][0]['tweet']['comments_count'], 2)
