@@ -1,6 +1,7 @@
 from accounts.api.serializers import UserSerializer
 from comments.models import Comment
 from django.contrib.contenttypes.models import ContentType
+from inbox.services import NotificationService
 from likes.models import Like
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -43,11 +44,13 @@ class BaseLikeSerializerForCreateAndCancel(serializers.ModelSerializer):
 class LikeSerializerForCreate(BaseLikeSerializerForCreateAndCancel):
     def create(self, validated_data):
         model_class = self._get_model_class(validated_data)
-        instance, _ = Like.objects.get_or_create(
+        instance, created = Like.objects.get_or_create(
             content_type=ContentType.objects.get_for_model(model_class),
             object_id=validated_data['object_id'],
             user=self.context['request'].user,
         )
+        if created:
+            NotificationService.seed_like_notification(instance)
         return instance
 
 

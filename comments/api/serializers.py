@@ -1,5 +1,6 @@
 from accounts.api.serializers import UserSerializerForComment
 from comments.models import Comment
+from inbox.services import NotificationService
 from likes.services import LikeServices
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -45,8 +46,10 @@ class CommentSerializerForCreate(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return Comment.objects.create(
+        instance = Comment.objects.create(
             tweet_id=validated_data['tweet_id'],
             user_id=validated_data['user_id'],
             content=validated_data['content'],
         )
+        NotificationService.seed_comment_notification(instance)
+        return instance
