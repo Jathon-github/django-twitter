@@ -1,13 +1,12 @@
-from testing.testcases import TestCase
-from inbox.services import NotificationService
 from notifications.models import Notification
+from testing.testcases import TestCase
 
 
 COMMENT_URL = '/api/comments/'
 LIKE_URL = '/api/likes/'
 
 
-class NotificationServiceApiTest(TestCase):
+class NotificationTest(TestCase):
     def setUp(self):
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
