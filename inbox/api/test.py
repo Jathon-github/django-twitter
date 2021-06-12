@@ -26,16 +26,28 @@ class NotificationTest(TestCase):
         self.assertEqual(Notification.objects.count(), 1)
 
     def test_seed_like_notification(self):
-        self.user1_client.post(LIKE_URL, {'content_type': 'tweet', 'object_id': self.tweet.id})
+        self.user1_client.post(LIKE_URL, {
+            'content_type': 'tweet',
+            'object_id': self.tweet.id,
+        })
         self.assertEqual(Notification.objects.count(), 0)
 
-        self.user2_client.post(LIKE_URL, {'content_type': 'tweet', 'object_id': self.tweet.id})
+        self.user2_client.post(LIKE_URL, {
+            'content_type': 'tweet',
+            'object_id': self.tweet.id,
+        })
         self.assertEqual(Notification.objects.count(), 1)
 
         comment = self.create_comment(self.user2, self.tweet)
 
-        self.user2_client.post(LIKE_URL, {'content_type': 'comment', 'object_id': comment.id})
+        self.user2_client.post(LIKE_URL, {
+            'content_type': 'comment',
+            'object_id': comment.id,
+        })
         self.assertEqual(Notification.objects.count(), 1)
 
-        self.user1_client.post(LIKE_URL, {'content_type': 'comment', 'object_id': comment.id})
+        self.user1_client.post(LIKE_URL, {
+            'content_type': 'comment',
+            'object_id': comment.id,
+        })
         self.assertEqual(Notification.objects.count(), 2)
