@@ -15,13 +15,13 @@ class NotificationTest(TestCase):
     def test_seed_comment_notification(self):
         self.user1_client.post(COMMENT_URL, {
             'tweet_id': self.tweet.id,
-            'content': 'first comment',
+            'content': 'comment',
         })
         self.assertEqual(Notification.objects.count(), 0)
 
         self.user2_client.post(COMMENT_URL, {
             'tweet_id': self.tweet.id,
-            'content': 'first comment',
+            'content': 'comment',
         })
         self.assertEqual(Notification.objects.count(), 1)
 
