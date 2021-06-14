@@ -5,6 +5,7 @@ from testing.testcases import TestCase
 COMMENT_URL = '/api/comments/'
 LIKE_URL = '/api/likes/'
 NOTIFICATION_LIST_URL = '/api/notifications/'
+NOTIFICATION_UPDATE_URL = '/api/notifications/{}/'
 NOTIFICATION_UNREAD_COUNT_URL = '/api/notifications/unread-count/'
 NOTIFICATION_MARK_ALL_AS_READ_URL = '/api/notifications/mark-all-as-read/'
 
@@ -161,3 +162,47 @@ class NotificationApiTests(TestCase):
         self.assertEqual(response.data['count'], 1)
         response = self.user1_client.get(NOTIFICATION_LIST_URL, {'unread': True})
         self.assertEqual(response.data['count'], 2)
+
+    def test_update(self):
+        # created 2 notifications
+        self.user2_client.post(LIKE_URL, {
+            'content_type': 'tweet',
+            'object_id': self.user1_tweet.id,
+        })
+        comment = self.create_comment(self.user1, self.user1_tweet)
+        self.user2_client.post(LIKE_URL, {
+            'content_type': 'comment',
+            'object_id': comment.id,
+        })
+
+        # get 2 notifications
+        first_notification = self.user1.notifications.first()
+        second_notification = self.user1.notifications.exclude(
+            id=first_notification.id,
+        ).first()
+
+        first_url = NOTIFICATION_UPDATE_URL.format(first_notification.id)
+        second_url = NOTIFICATION_UPDATE_URL.format(second_notification.id)
+
+        # test anonymous_client
+        response = self.anonymous_client.put(first_url, {'unread': False})
+        self.assertEqual(response.status_code, 403)
+
+        # test get and post
+        response = self.user1_client.get(second_url, {'unread': False})
+        self.assertEqual(response.status_code, 405)
+        response = self.user1_client.post(second_url, {'unread': False})
+        self.assertEqual(response.status_code, 405)
+
+        # test other user
+        response = self.user2_client.put(second_url, {'unread': False})
+        self.assertEqual(response.status_code, 404)
+        second_notification.refresh_from_db()
+        self.assertEqual(second_notification.unread, True)
+
+        response = self.user1_client.put(first_url, {'unread': False})
+        self.assertEqual(response.status_code, 200)
+        first_notification.refresh_from_db()
+        second_notification.refresh_from_db()
+        self.assertEqual(first_notification.unread, False)
+        self.assertEqual(second_notification.unread, True)
