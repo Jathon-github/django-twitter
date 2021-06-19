@@ -57,6 +57,11 @@ class TestApiTests(TestCase):
         response = self.anonymous_client.get(url)
         self.assertEqual(len(response.data['tweet']['comments']), 2)
 
+        # tweet 里包含用户的头像和昵称
+        profile = self.user1.profile
+        self.assertEqual(response.data['tweet']['user']['nickname'], profile.nickname)
+        self.assertEqual(response.data['tweet']['user']['avatar_url'], None)
+
     def test_create_api(self):
         response = self.anonymous_client.post(TWEET_CREATE_API)
         self.assertEqual(response.status_code, 403)
