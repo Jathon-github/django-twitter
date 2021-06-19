@@ -5,7 +5,7 @@ from comments.api.serializers import (
     CommentSerializer,
     CommentSerializerForCreate,
 )
-from comments.api.permissions import IsObjectOwner
+from utils.permissions import IsObjectOwner
 from comments.models import Comment
 from utils.decorators import required_params
 

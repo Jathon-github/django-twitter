@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -144,6 +146,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# 设置存储用户上传文件的 storage 用什么系统
+# 添加下面配置后 Django admin 后台上传的 ImageField, FileField 类型的字段都会被自动上传到 oss 的服务器中
+# 访问路径也会自动替换 如果注释掉的话 oss 的配置会失效 上传文件会存储到本地, 且访问路径也会变成本地
+DEFAULT_FILE_STORAGE = 'django_oss_storage.backends.OssMediaStorage'
+TESTING = ((" ".join(sys.argv)).find('manage.py test') != -1)
+if TESTING:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 try:
     from .local_settings import *
