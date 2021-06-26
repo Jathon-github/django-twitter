@@ -1,8 +1,9 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework import status
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from tweets.models import Tweet
-from rest_framework import status
-
+from tweets.models import TweetPhoto
 
 TWEET_LIST_API = '/api/tweets/'
 TWEET_CREATE_API = '/api/tweets/'
@@ -82,3 +83,75 @@ class TestApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['user']['id'], self.user1.id)
         self.assertEqual(Tweet.objects.count(), tweets_count + 1)
+
+    def test_create_with_files(self):
+        # test not has files
+        response = self.user1_client.post(TWEET_CREATE_API, {
+            'content': 'tweet content',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 0)
+
+        # test files is empty
+        response = self.user1_client.post(TWEET_CREATE_API, {
+            'content': 'tweet content',
+            'files': [],
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 0)
+
+        # test one file
+        file = SimpleUploadedFile(
+            name='test.jpg',
+            content='test content'.encode(),
+            content_type='image/jpeg',
+        )
+        response = self.user1_client.post(TWEET_CREATE_API, {
+            'content': 'tweet content',
+            'files': [file],
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 1)
+
+        # test many files
+        file1 = SimpleUploadedFile(
+            name='test1.jpg',
+            content='test1 content'.encode(),
+            content_type='image/jpeg',
+        )
+        file2 = SimpleUploadedFile(
+            name='test2.jpg',
+            content='test2 content'.encode(),
+            content_type='image/jpeg',
+        )
+        response = self.user1_client.post(TWEET_CREATE_API, {
+            'content': 'tweet content',
+            'files': [file1, file2],
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 3)
+
+        # test retrieve and order
+        retrieve_url = TWEET_RETRIEVE_API.format(response.data['id'])
+        response = self.user1_client.get(retrieve_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual('photo_urls' in response.data['tweet'], True)
+        self.assertEqual(len(response.data['tweet']['photo_urls']), 2)
+        self.assertEqual('test1' in response.data['tweet']['photo_urls'][0], True)
+        self.assertEqual('test2' in response.data['tweet']['photo_urls'][1], True)
+
+        # test TWEET_PHOTOS_UPLOAD_LIMIT
+        files = [
+            SimpleUploadedFile(
+                name=f'test{i}.jpg',
+                content=f'test{i} content'.encode(),
+                content_type='image/jpeg',
+            )
+            for i in range(10)
+        ]
+        response = self.user1_client.post(TWEET_CREATE_API, {
+            'content': 'content',
+            'files': files,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(TweetPhoto.objects.count(), 3)
