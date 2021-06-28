@@ -20,7 +20,7 @@ class FollowerSerializer(serializers.ModelSerializer):
             return False
         return FriendshipService.has_followed(
             self.context['request'].user,
-            obj.to_user
+            obj.from_user,
         )
 
 
@@ -37,8 +37,8 @@ class FollowingSerializer(serializers.ModelSerializer):
         if self.context['request'].user.is_anonymous:
             return False
         return FriendshipService.has_followed(
-            obj.from_user,
-            self.context['request'].user
+            self.context['request'].user,
+            obj.to_user,
         )
 
 

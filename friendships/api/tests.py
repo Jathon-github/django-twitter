@@ -135,12 +135,12 @@ class FriendshipApiTest(TestCase):
         max_page_size = FriendshipPagination.max_page_size
         page_size = FriendshipPagination.page_size
 
-        from_user, from_user_client = self.create_user_and_client('from_user')
+        from_user = self.create_user('from_user')
         for i in range(page_size * 2):
             to_user = self.create_user(f'to_user_{i}')
             Friendship.objects.create(from_user=from_user, to_user=to_user)
             if to_user.id % 2 == 0:
-                Friendship.objects.create(from_user=to_user,  to_user=from_user)
+                Friendship.objects.create(from_user=self.user1, to_user=to_user)
 
         url = FOLLOWINGS_URL.format(from_user.id)
         self._test_friendship_pagination(url, page_size, max_page_size)
@@ -151,22 +151,21 @@ class FriendshipApiTest(TestCase):
             self.assertEqual(result['has_followed'], False)
 
         # from_user has followed users with even id
-        response = from_user_client.get(url, {'page': 1})
+        response = self.user1_client.get(url, {'page': 1})
         for result in response.data['results']:
             has_followed = (result['user']['id'] % 2 == 0)
-            # self.assertEqual(result['has_followed'], has_followed)
-            self.assertEqual(result['has_followed'], True)
+            self.assertEqual(result['has_followed'], has_followed)
 
     def test_followers_pagination(self):
         max_page_size = FriendshipPagination.max_page_size
         page_size = FriendshipPagination.page_size
 
-        to_user, to_user_client = self.create_user_and_client('to_user')
+        to_user = self.create_user('to_user')
         for i in range(page_size * 2):
             from_user = self.create_user(f'from_user_{i}')
             Friendship.objects.create(from_user=from_user, to_user=to_user)
             if from_user.id % 2 == 0:
-                Friendship.objects.create(from_user=to_user, to_user=from_user)
+                Friendship.objects.create(from_user=self.user2, to_user=from_user)
 
         url = FOLLOWERS_URL.format(to_user.id)
         self._test_friendship_pagination(url, page_size, max_page_size)
@@ -177,11 +176,10 @@ class FriendshipApiTest(TestCase):
             self.assertEqual(result['has_followed'], False)
 
         # from_user has followed users with even id
-        response = to_user_client.get(url, {'page': 1})
+        response = self.user2_client.get(url, {'page': 1})
         for result in response.data['results']:
             has_followed = (result['user']['id'] % 2 == 0)
-            # self.assertEqual(result['has_followed'], has_followed)
-            self.assertEqual(result['has_followed'], True)
+            self.assertEqual(result['has_followed'], has_followed)
 
     def _test_friendship_pagination(self, url, page_size, max_page_size):
         response = self.anonymous_client.get(url, {'page': 1})
