@@ -9,29 +9,27 @@ from friendships.api.serializers import (
     FriendshipSerializerForCreate,
 )
 from rest_framework.response import Response
+from utils.paginations import FriendshipPagination
 
 
-# Create your views here.
 class FriendshipViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = FriendshipSerializerForCreate
+    pagination_class = FriendshipPagination
 
     @action(methods=['GET'], detail=True, permission_classes=(AllowAny,))
     def followers(self, request, pk):
-        friendship = Friendship.objects.filter(to_user_id=pk).order_by('-created_at')
-
-        serializer = FollowerSerializer(friendship, many=True)
-        return Response({
-            'followers': serializer.data
-        }, status=status.HTTP_200_OK)
+        friendships = Friendship.objects.filter(to_user_id=pk).order_by('-created_at')
+        page = self.paginate_queryset(friendships)
+        serializer = FollowerSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['GET'], detail=True, permission_classes=(AllowAny,))
     def followings(self, request, pk):
-        friendship = Friendship.objects.filter(from_user_id=pk).order_by('-created_at')
-        serializer = FollowingSerializer(friendship, many=True)
-        return Response({
-            'followings': serializer.data
-        }, status=status.HTTP_200_OK)
+        friendships = Friendship.objects.filter(from_user_id=pk).order_by('-created_at')
+        page = self.paginate_queryset(friendships)
+        serializer = FollowingSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['POST'], detail=True, permission_classes=(IsAuthenticated,))
     def follow(self, request, pk):
@@ -55,7 +53,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
 
         instance = serializer.save()
         return Response({
-            'user': FollowingSerializer(instance).data['user'],
+            'user': FollowingSerializer(instance, context={'request': request}).data['user'],
             'success': True,
             'duplicate': False,
         }, status=status.HTTP_201_CREATED)
