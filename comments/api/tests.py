@@ -100,4 +100,4 @@ class CommentApiTest(TestCase):
         self.create_comment(self.user1, self.tweet)
         response = self.user1_client.get(NEWSFEEDS_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['newsfeeds'][0]['tweet']['comments_count'], 2)
+        self.assertEqual(response.data['results'][0]['tweet']['comments_count'], 2)
