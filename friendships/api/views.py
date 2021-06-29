@@ -9,7 +9,7 @@ from friendships.api.serializers import (
     FriendshipSerializerForCreate,
 )
 from rest_framework.response import Response
-from utils.paginations import FriendshipPagination
+from friendships.api.paginations import FriendshipPagination
 
 
 class FriendshipViewSet(viewsets.GenericViewSet):

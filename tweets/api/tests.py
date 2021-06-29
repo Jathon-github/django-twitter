@@ -4,6 +4,8 @@ from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from tweets.models import Tweet
 from tweets.models import TweetPhoto
+from utils.pagination import EndlessPagination
+
 
 TWEET_LIST_API = '/api/tweets/'
 TWEET_CREATE_API = '/api/tweets/'
@@ -32,14 +34,14 @@ class TestApiTests(TestCase):
 
         response = self.anonymous_client.get(TWEET_LIST_API, {'user_id': self.user1.id})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['tweets']), 3)
+        self.assertEqual(len(response.data['results']), 3)
 
         response = self.anonymous_client.get(TWEET_LIST_API, {'user_id': self.user2.id})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['tweets']), 2)
+        self.assertEqual(len(response.data['results']), 2)
 
-        self.assertEqual(response.data['tweets'][0]['id'], self.tweets2[1].id)
-        self.assertEqual(response.data['tweets'][1]['id'], self.tweets2[0].id)
+        self.assertEqual(response.data['results'][0]['id'], self.tweets2[1].id)
+        self.assertEqual(response.data['results'][1]['id'], self.tweets2[0].id)
 
     def test_retrieve_api(self):
         response = self.anonymous_client.get(TWEET_RETRIEVE_API.format(-1))
@@ -155,3 +157,46 @@ class TestApiTests(TestCase):
         })
         self.assertEqual(response.status_code, 400)
         self.assertEqual(TweetPhoto.objects.count(), 3)
+
+    def test_pagination(self):
+        page_size = EndlessPagination.page_size
+        last_page_size = (page_size + 1) // 2
+
+        user = self.create_user('user')
+        for i in range(page_size + last_page_size):
+            self.create_tweet(user)
+
+        # hasn't created_at__gt any created_at__lt
+        response = self.anonymous_client.get(TWEET_LIST_API, {'user_id': user.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), page_size)
+        self.assertEqual(response.data['has_next_page'], True)
+        first_time = response.data['results'][0]['created_at']
+        last_time = response.data['results'][0]['created_at']
+
+        for i in range(1, page_size):
+            self.assertEqual(response.data['results'][i]['created_at'] < last_time, True)
+            last_time = response.data['results'][i]['created_at']
+
+        # has created_at__gt
+        tweet1 = self.create_tweet(user)
+        tweet2 = self.create_tweet(user)
+        response = self.anonymous_client.get(TWEET_LIST_API, {
+            'user_id': user.id,
+            'created_at__gt': first_time,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(response.data['has_next_page'], False)
+        self.assertEqual(response.data['results'][0]['id'], tweet2.id)
+        self.assertEqual(response.data['results'][1]['id'], tweet1.id)
+
+        # has created_at__lt
+        response = self.anonymous_client.get(TWEET_LIST_API, {
+            'user_id': user.id,
+            'created_at__lt': last_time,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), last_page_size)
+        self.assertEqual(response.data['has_next_page'], False)
+        self.assertEqual(response.data['results'][0]['created_at'] < last_time, True)

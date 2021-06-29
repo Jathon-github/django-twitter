@@ -48,9 +48,6 @@ class CommentApiTest(TestCase):
         response = self.anonymous_client.post(COMMENT_URL)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        # response = self.user1_client.get(COMMENT_URL)
-        # self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
         response = self.user1_client.post(COMMENT_URL)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -98,7 +95,7 @@ class CommentApiTest(TestCase):
         self.create_comment(self.user2, self.tweet)
         response = self.user1_client.get(TWEET_LIST_URL, {'user_id': self.user1.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['tweets'][0]['comments_count'], 1)
+        self.assertEqual(response.data['results'][0]['comments_count'], 1)
 
         self.create_comment(self.user1, self.tweet)
         response = self.user1_client.get(NEWSFEEDS_URL)
