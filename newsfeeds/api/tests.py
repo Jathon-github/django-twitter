@@ -1,7 +1,8 @@
-from testing.testcases import TestCase
-from rest_framework.test import APIClient
 from friendships.models import Friendship
+from newsfeeds.models import NewsFeed
 from rest_framework import status
+from rest_framework.test import APIClient
+from testing.testcases import TestCase
 from utils.pagination import EndlessPagination
 
 
@@ -56,12 +57,10 @@ class NewsFeedApiTest(TestCase):
 
         user, user_client = self.create_user_and_client('user')
         for _ in range(page_size + last_page_size):
-            tweet = self.create_tweet(user)
-            self.create_newsfeed(user, tweet)
+            self.create_tweet(user)
 
         # hasn't created_at__gt any created_at__lt
-        response = self.user_client.get(NEWSFEEDS_URL,
-                                             {'user_id': user.id})
+        response = user_client.get(NEWSFEEDS_URL)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), page_size)
         self.assertEqual(response.data['has_next_page'], True)
@@ -74,26 +73,29 @@ class NewsFeedApiTest(TestCase):
             last_time = response.data['results'][i]['created_at']
 
         # has created_at__gt
+        response = user_client.get(NEWSFEEDS_URL, {
+            'created_at__gt': first_time,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 0)
         tweet1 = self.create_tweet(user)
+        newsfeed1 = NewsFeed.objects.filter(user=tweet1.user, tweet=tweet1).first()
         tweet2 = self.create_tweet(user)
-        response = self.anonymous_client.get(TWEET_LIST_API, {
-            'user_id': user.id,
+        newsfeed2 = NewsFeed.objects.filter(user=tweet2.user, tweet=tweet2).first()
+        response = user_client.get(NEWSFEEDS_URL, {
             'created_at__gt': first_time,
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 2)
         self.assertEqual(response.data['has_next_page'], False)
-        self.assertEqual(response.data['results'][0]['id'], tweet2.id)
-        self.assertEqual(response.data['results'][1]['id'], tweet1.id)
+        self.assertEqual(response.data['results'][0]['id'], newsfeed2.id)
+        self.assertEqual(response.data['results'][1]['id'], newsfeed1.id)
 
         # has created_at__lt
-        response = self.anonymous_client.get(TWEET_LIST_API, {
-            'user_id': user.id,
+        response = user_client.get(NEWSFEEDS_URL, {
             'created_at__lt': last_time,
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), last_page_size)
         self.assertEqual(response.data['has_next_page'], False)
-        self.assertEqual(response.data['results'][0]['created_at'] < last_time,
-                         True)
-
+        self.assertEqual(response.data['results'][0]['created_at'] < last_time, True)
