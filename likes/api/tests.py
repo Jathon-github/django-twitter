@@ -205,9 +205,9 @@ class LikeApiTest(TestCase):
         # test newsfeed list api
         response = self.user1_client.get(NEWSFEED_LIST_API)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['newsfeeds'][0]['tweet']['has_liked'],
+        self.assertEqual(response.data['results'][0]['tweet']['has_liked'],
                          True)
-        self.assertEqual(response.data['newsfeeds'][0]['tweet']['likes_count'],
+        self.assertEqual(response.data['results'][0]['tweet']['likes_count'],
                          2)
 
         # test likes details

@@ -2,6 +2,7 @@ from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from friendships.models import Friendship
 from rest_framework import status
+from utils.pagination import EndlessPagination
 
 
 NEWSFEEDS_URL = '/api/newsfeeds/'
@@ -9,7 +10,6 @@ POST_TWEETS_URL = '/api/tweets/'
 FOLLOW_URL = '/api/friendships/{}/follow/'
 
 
-# Create your tests here.
 class NewsFeedApiTest(TestCase):
     def setUp(self):
         self.user1 = self.create_user('user1')
@@ -37,15 +37,63 @@ class NewsFeedApiTest(TestCase):
 
         response = self.user1_client.get(NEWSFEEDS_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['newsfeeds']), 0)
+        self.assertEqual(len(response.data['results']), 0)
 
         self.user1_client.post(POST_TWEETS_URL, {'content': 'user1_tweet'})
         response = self.user1_client.get(NEWSFEEDS_URL)
-        self.assertEqual(len(response.data['newsfeeds']), 1)
+        self.assertEqual(len(response.data['results']), 1)
 
         self.user1_client.post(FOLLOW_URL.format(self.user2.id))
         response = self.user2_client.post(POST_TWEETS_URL, {'content': 'user2_tweet'})
         posted_tweet_id = response.data['id']
         response = self.user1_client.get(NEWSFEEDS_URL)
-        self.assertEqual(len(response.data['newsfeeds']), 2)
-        self.assertEqual(response.data['newsfeeds'][0]['tweet']['id'], posted_tweet_id)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(response.data['results'][0]['tweet']['id'], posted_tweet_id)
+
+    def test_pagination(self):
+        page_size = EndlessPagination.page_size
+        last_page_size = (page_size + 1) // 2
+
+        user, user_client = self.create_user_and_client('user')
+        for _ in range(page_size + last_page_size):
+            tweet = self.create_tweet(user)
+            self.create_newsfeed(user, tweet)
+
+        # hasn't created_at__gt any created_at__lt
+        response = self.user_client.get(NEWSFEEDS_URL,
+                                             {'user_id': user.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), page_size)
+        self.assertEqual(response.data['has_next_page'], True)
+        first_time = response.data['results'][0]['created_at']
+        last_time = response.data['results'][0]['created_at']
+
+        for i in range(1, page_size):
+            self.assertEqual(
+                response.data['results'][i]['created_at'] < last_time, True)
+            last_time = response.data['results'][i]['created_at']
+
+        # has created_at__gt
+        tweet1 = self.create_tweet(user)
+        tweet2 = self.create_tweet(user)
+        response = self.anonymous_client.get(TWEET_LIST_API, {
+            'user_id': user.id,
+            'created_at__gt': first_time,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(response.data['has_next_page'], False)
+        self.assertEqual(response.data['results'][0]['id'], tweet2.id)
+        self.assertEqual(response.data['results'][1]['id'], tweet1.id)
+
+        # has created_at__lt
+        response = self.anonymous_client.get(TWEET_LIST_API, {
+            'user_id': user.id,
+            'created_at__lt': last_time,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), last_page_size)
+        self.assertEqual(response.data['has_next_page'], False)
+        self.assertEqual(response.data['results'][0]['created_at'] < last_time,
+                         True)
+
