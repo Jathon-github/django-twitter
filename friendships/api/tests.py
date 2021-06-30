@@ -11,9 +11,10 @@ FOLLOWERS_URL = '/api/friendships/{}/followers/'
 FOLLOWINGS_URL = '/api/friendships/{}/followings/'
 
 
-# Create your tests here.
 class FriendshipApiTest(TestCase):
     def setUp(self):
+        self.clear_cache()
+
         self.user1 = self.create_user('user1')
         self.user1_client = APIClient()
         self.user1_client.force_authenticate(self.user1)
@@ -149,7 +150,7 @@ class FriendshipApiTest(TestCase):
         response = self.anonymous_client.get(url, {'page': 1})
         for result in response.data['results']:
             self.assertEqual(result['has_followed'], False)
-
+        self.clear_cache()
         # self.user1 has followed users with even id
         response = self.user1_client.get(url, {'page': 1})
         for result in response.data['results']:
@@ -174,7 +175,7 @@ class FriendshipApiTest(TestCase):
         response = self.anonymous_client.get(url, {'page': 1})
         for result in response.data['results']:
             self.assertEqual(result['has_followed'], False)
-
+        self.clear_cache()
         # self.user2 has followed users with even id
         response = self.user2_client.get(url, {'page': 1})
         for result in response.data['results']:

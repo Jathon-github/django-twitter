@@ -6,7 +6,21 @@ from django.contrib.auth.models import User
 from friendships.services import FriendshipService
 
 
-class FollowerSerializer(serializers.ModelSerializer):
+class FollowingUserIdSetMixin(serializers.ModelSerializer):
+    @property
+    def following_user_id_set(self):
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return set()
+        if hasattr(self, '_following_user_id_set'):
+            return self._following_user_id_set
+
+        user_id_set = FriendshipService.get_following_user_id_set(user.id)
+        setattr(self, '_following_user_id_set', user_id_set)
+        return user_id_set
+
+
+class FollowerSerializer(FollowingUserIdSetMixin):
     user = UserSerializerForFriendship(source='from_user')
     created_at = serializers.DateTimeField()
     has_followed = serializers.SerializerMethodField()
@@ -16,15 +30,10 @@ class FollowerSerializer(serializers.ModelSerializer):
         fields = ('user', 'created_at', 'has_followed')
 
     def get_has_followed(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        return FriendshipService.has_followed(
-            self.context['request'].user,
-            obj.from_user,
-        )
+        return obj.from_user.id in self.following_user_id_set
 
 
-class FollowingSerializer(serializers.ModelSerializer):
+class FollowingSerializer(FollowingUserIdSetMixin):
     user = UserSerializerForFriendship(source='to_user')
     created_at = serializers.DateTimeField()
     has_followed = serializers.SerializerMethodField()
@@ -34,12 +43,7 @@ class FollowingSerializer(serializers.ModelSerializer):
         fields = ('user', 'created_at', 'has_followed')
 
     def get_has_followed(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        return FriendshipService.has_followed(
-            self.context['request'].user,
-            obj.to_user,
-        )
+        return obj.to_user.id in self.following_user_id_set
 
 
 class FriendshipSerializerForCreate(serializers.ModelSerializer):
