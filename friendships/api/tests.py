@@ -1,8 +1,8 @@
+from friendships.api.paginations import FriendshipPagination
 from friendships.models import Friendship
 from rest_framework import status
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
-from friendships.api.paginations import FriendshipPagination
 
 
 FOLLOW_URL = '/api/friendships/{}/follow/'
@@ -150,7 +150,7 @@ class FriendshipApiTest(TestCase):
         response = self.anonymous_client.get(url, {'page': 1})
         for result in response.data['results']:
             self.assertEqual(result['has_followed'], False)
-        self.clear_cache()
+
         # self.user1 has followed users with even id
         response = self.user1_client.get(url, {'page': 1})
         for result in response.data['results']:
@@ -175,7 +175,7 @@ class FriendshipApiTest(TestCase):
         response = self.anonymous_client.get(url, {'page': 1})
         for result in response.data['results']:
             self.assertEqual(result['has_followed'], False)
-        self.clear_cache()
+
         # self.user2 has followed users with even id
         response = self.user2_client.get(url, {'page': 1})
         for result in response.data['results']:
