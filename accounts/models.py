@@ -1,5 +1,7 @@
-from django.db import models
+from accounts.listeners import invalidate_user_cache, invalidate_profile_cache
 from django.contrib.auth.models import User
+from django.db import models
+from django.db.models.signals import post_save, pre_delete
 
 
 class UserProfile(models.Model):
@@ -18,12 +20,19 @@ class UserProfile(models.Model):
 
 
 def get_profile(user):
+    from accounts.services import UserService
+
     if hasattr(user, '_cached_user_profile'):
         return getattr(user, '_cached_user_profile')
-
-    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile = UserService.get_profile_through_cache(user.id)
     setattr(user, '_cached_user_profile', profile)
     return profile
 
 
 User.profile = property(get_profile)
+
+post_save.connect(invalidate_user_cache, sender=User)
+pre_delete.connect(invalidate_user_cache, sender=User)
+
+post_save.connect(invalidate_profile_cache, sender=UserProfile)
+pre_delete.connect(invalidate_profile_cache, sender=UserProfile)
