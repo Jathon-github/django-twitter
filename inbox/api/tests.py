@@ -12,6 +12,8 @@ NOTIFICATION_MARK_ALL_AS_READ_URL = '/api/notifications/mark-all-as-read/'
 
 class NotificationTests(TestCase):
     def setUp(self):
+        self.clear_cache()
+
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
         self.tweet = self.create_tweet(self.user1)
@@ -59,6 +61,8 @@ class NotificationTests(TestCase):
 
 class NotificationApiTests(TestCase):
     def setUp(self):
+        self.clear_cache()
+
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
         self.user1_tweet = self.create_tweet(self.user1)

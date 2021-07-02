@@ -14,13 +14,6 @@ class FriendshipService:
         return [friendship.from_user_id for friendship in friendships]
 
     @classmethod
-    def has_followed(cls, from_user, to_user):
-        return Friendship.objects.filter(
-            from_user=from_user,
-            to_user=to_user,
-        ).exists()
-
-    @classmethod
     def get_following_user_id_set(cls, user_id):
         key = FOLLOWINGS_PATTERN.format(user_id=user_id)
         user_id_set = cache.get(key)

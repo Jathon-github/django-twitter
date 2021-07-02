@@ -11,6 +11,8 @@ USER_PROFILE_DETAIL_URL = '/api/profiles/{}/'
 
 class AccountApiTests(TestCase):
     def setUp(self):
+        self.clear_cache()
+
         self.user = self.create_user(
             username='admin',
             email='admin@django.com',
@@ -107,6 +109,7 @@ class AccountApiTests(TestCase):
 
 class UserProfileApiTests(TestCase):
     def setUp(self):
+        self.clear_cache()
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
 
