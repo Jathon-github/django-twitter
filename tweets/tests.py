@@ -65,26 +65,39 @@ class TweetPhotoTests(TestCase):
 class TweetServiceTests(TestCase):
     def setUp(self):
         self.clear_cache()
+        self.user = self.create_user('user')
 
     def test_get_user_tweets(self):
-        user = self.create_user('user')
         tweets = []
         for i in range(3):
-            tweet = self.create_tweet(user)
+            tweet = self.create_tweet(self.user)
             tweets.append(tweet)
         tweets.reverse()
 
         # cache hit
-        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        cached_tweets = TweetService.get_cached_tweets(user_id=self.user.id)
         self.assertEqual(tweets, cached_tweets)
 
         # cache miss
         RedisClient.clear()
-        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        cached_tweets = TweetService.get_cached_tweets(user_id=self.user.id)
         self.assertEqual(tweets, cached_tweets)
 
         # cache update
-        new_tweet = self.create_tweet(user)
+        new_tweet = self.create_tweet(self.user)
         tweets.insert(0, new_tweet)
-        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        cached_tweets = TweetService.get_cached_tweets(user_id=self.user.id)
         self.assertEqual(tweets, cached_tweets)
+
+    def test_create_new_tweet_before_get_cached_tweets(self):
+        tweet1 = self.create_tweet(self.user)
+
+        RedisClient.clear()
+        conn = RedisClient.get_connection()
+        key = USER_TWEETS_PATTERN.format(user_id=self.user.id)
+        self.assertEqual(conn.exists(key), False)
+
+        tweet2 = self.create_tweet(self.user)
+        self.assertEqual(conn.exists(key), True)
+        tweets = TweetService.get_cached_tweets(self.user.id)
+        self.assertEqual(tweets, [tweet2, tweet1])

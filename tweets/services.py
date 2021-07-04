@@ -24,7 +24,7 @@ class TweetService:
         return RedisHelper.load_objects(key, query_set)
 
     @classmethod
-    def push_cached_tweets(cls, tweet):
+    def push_tweet_to_cache(cls, tweet):
         query_set = Tweet.objects.filter(user_id=tweet.user_id)
         key = USER_TWEETS_PATTERN.format(user_id=tweet.user_id)
         return RedisHelper.push_object(key, tweet, query_set)
