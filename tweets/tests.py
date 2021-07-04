@@ -2,6 +2,8 @@ from datetime import timedelta
 from testing.testcases import TestCase
 from tweets.constants import TweetPhotoStatus
 from tweets.models import TweetPhoto
+from tweets.services import TweetService
+from twitter.cache import USER_TWEETS_PATTERN
 from utils.redis_client import RedisClient
 from utils.redis_serializers import DjangoModelSerializer
 from utils.time_helpers import utc_now
@@ -58,3 +60,31 @@ class TweetPhotoTests(TestCase):
         self.assertEqual(photo.tweet, self.tweet)
         self.assertEqual(self.tweet.tweetphoto_set.count(), 1)
         self.assertEqual(photo.status, TweetPhotoStatus.PENDING)
+
+
+class TweetServiceTests(TestCase):
+    def setUp(self):
+        self.clear_cache()
+
+    def test_get_user_tweets(self):
+        user = self.create_user('user')
+        tweets = []
+        for i in range(3):
+            tweet = self.create_tweet(user)
+            tweets.append(tweet)
+        tweets.reverse()
+
+        # cache hit
+        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        self.assertEqual(tweets, cached_tweets)
+
+        # cache miss
+        RedisClient.clear()
+        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        self.assertEqual(tweets, cached_tweets)
+
+        # cache update
+        new_tweet = self.create_tweet(user)
+        tweets.insert(0, new_tweet)
+        cached_tweets = TweetService.get_cached_tweets(user_id=user.id)
+        self.assertEqual(tweets, cached_tweets)
