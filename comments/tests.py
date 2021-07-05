@@ -6,7 +6,7 @@ class CommentModelTest(TestCase):
         self.clear_cache()
 
         self.user = self.create_user('user')
-        self.tweet = self.create_tweet(user=self.user, content='tweet')
+        self.tweet = self.create_tweet_with_newsfeed(user=self.user, content='tweet')
         self.comment = self.create_comment(self.user, self.tweet)
 
     def test_comment(self):
