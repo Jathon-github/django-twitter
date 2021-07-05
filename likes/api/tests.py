@@ -16,7 +16,7 @@ class LikeApiTest(TestCase):
 
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
-        self.tweet = self.create_tweet(self.user1)
+        self.tweet = self.create_tweet_with_newsfeed(self.user1)
         self.comment = self.create_comment(user=self.user1, tweet=self.tweet)
 
     def test_tweet_like(self):

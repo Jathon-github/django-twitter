@@ -1,6 +1,7 @@
+from dateutil import parser
+from django.conf import settings
 from rest_framework.pagination import BasePagination
 from rest_framework.response import Response
-from dateutil import parser
 
 
 class EndlessPagination(BasePagination):
@@ -35,10 +36,18 @@ class EndlessPagination(BasePagination):
         self.has_next_page = len(reverse_ordered_list) > index + self.page_size
         return reverse_ordered_list[index: index + self.page_size]
 
-    def paginate_queryset(self, queryset, request, view=None):
-        if type(queryset) == list:
-            return self.paginate_ordered_list(queryset, request)
+    def paginate_cache_list(self, cache_list, request):
+        paginated_list = self.paginate_ordered_list(cache_list, request)
+        if 'created_at__gt' in request.query_params and len(paginated_list) != len(cache_list):
+            return paginated_list
+        if self.has_next_page:
+            return paginated_list
+        if len(cache_list) < settings.REDIS_LIST_LENGTH_LIMIT:
+            return paginated_list
 
+        return None
+
+    def paginate_queryset(self, queryset, request, view=None):
         if 'created_at__gt' in request.query_params:
             created_at__gt = request.query_params['created_at__gt']
             queryset = queryset.filter(created_at__gt=created_at__gt)

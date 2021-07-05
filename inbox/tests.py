@@ -9,7 +9,7 @@ class NotificationServiceTest(TestCase):
 
         self.user1 = self.create_user('user1')
         self.user2 = self.create_user('user2')
-        self.tweet = self.create_tweet(self.user1)
+        self.tweet = self.create_tweet_with_newsfeed(self.user1)
 
     def test_seed_comment_notification(self):
         comment = self.create_comment(self.user1, self.tweet)

@@ -14,7 +14,7 @@ class TweetTests(TestCase):
         self.clear_cache()
 
         self.user = self.create_user('user')
-        self.tweet = self.create_tweet(self.user)
+        self.tweet = self.create_tweet_with_newsfeed(self.user)
 
     def test_hours_to_now(self):
         self.tweet.created_at = utc_now() - timedelta(hours=10)
@@ -49,7 +49,7 @@ class TweetPhotoTests(TestCase):
         self.clear_cache()
 
         self.user = self.create_user('user')
-        self.tweet = self.create_tweet(self.user)
+        self.tweet = self.create_tweet_with_newsfeed(self.user)
 
     def test_created_photo(self):
         photo = TweetPhoto.objects.create(
@@ -70,7 +70,7 @@ class TweetServiceTests(TestCase):
     def test_get_user_tweets(self):
         tweets = []
         for i in range(3):
-            tweet = self.create_tweet(self.user)
+            tweet = self.create_tweet_with_newsfeed(self.user)
             tweets.append(tweet)
         tweets.reverse()
 
@@ -84,20 +84,20 @@ class TweetServiceTests(TestCase):
         self.assertEqual(tweets, cached_tweets)
 
         # cache update
-        new_tweet = self.create_tweet(self.user)
+        new_tweet = self.create_tweet_with_newsfeed(self.user)
         tweets.insert(0, new_tweet)
         cached_tweets = TweetService.get_cached_tweets(user_id=self.user.id)
         self.assertEqual(tweets, cached_tweets)
 
     def test_create_new_tweet_before_get_cached_tweets(self):
-        tweet1 = self.create_tweet(self.user)
+        tweet1 = self.create_tweet_with_newsfeed(self.user)
 
         RedisClient.clear()
         conn = RedisClient.get_connection()
         key = USER_TWEETS_PATTERN.format(user_id=self.user.id)
         self.assertEqual(conn.exists(key), False)
 
-        tweet2 = self.create_tweet(self.user)
+        tweet2 = self.create_tweet_with_newsfeed(self.user)
         self.assertEqual(conn.exists(key), True)
         tweets = TweetService.get_cached_tweets(self.user.id)
         self.assertEqual(tweets, [tweet2, tweet1])

@@ -1,6 +1,7 @@
 from django.conf import settings
 from utils.redis_client import RedisClient
 from utils.redis_serializers import DjangoModelSerializer
+from django.conf import settings
 
 
 class RedisHelper:
@@ -9,7 +10,7 @@ class RedisHelper:
         conn = RedisClient.get_connection()
 
         serializer_list = []
-        for obj in query_set:
+        for obj in query_set[:settings.REDIS_LIST_LENGTH_LIMIT]:
             serializer = DjangoModelSerializer.serializer(obj)
             serializer_list.append(serializer)
 
@@ -42,3 +43,4 @@ class RedisHelper:
 
         serializer = DjangoModelSerializer.serializer(tweet)
         conn.lpush(key, serializer)
+        conn.ltrim(key, 0, settings.REDIS_LIST_LENGTH_LIMIT - 1)

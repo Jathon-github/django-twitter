@@ -16,7 +16,7 @@ class NotificationTests(TestCase):
 
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
-        self.tweet = self.create_tweet(self.user1)
+        self.tweet = self.create_tweet_with_newsfeed(self.user1)
 
     def test_seed_comment_notification(self):
         self.user1_client.post(COMMENT_URL, {
@@ -65,7 +65,7 @@ class NotificationApiTests(TestCase):
 
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
-        self.user1_tweet = self.create_tweet(self.user1)
+        self.user1_tweet = self.create_tweet_with_newsfeed(self.user1)
 
     def test_unread_count(self):
         response = self.anonymous_client.get(NOTIFICATION_UNREAD_COUNT_URL)

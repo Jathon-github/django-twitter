@@ -18,7 +18,7 @@ class TestApiTests(TestCase):
 
         self.user1 = self.create_user('user1')
         self.tweets1 = [
-            self.create_tweet(self.user1)
+            self.create_tweet_with_newsfeed(self.user1)
             for _ in range(3)
         ]
         self.user1_client = APIClient()
@@ -26,7 +26,7 @@ class TestApiTests(TestCase):
 
         self.user2 = self.create_user('user2')
         self.tweets2 = [
-            self.create_tweet(self.user2)
+            self.create_tweet_with_newsfeed(self.user2)
             for _ in range(2)
         ]
 
@@ -49,7 +49,7 @@ class TestApiTests(TestCase):
         response = self.anonymous_client.get(TWEET_RETRIEVE_API.format(-1))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        tweet = self.create_tweet(user=self.user1)
+        tweet = self.create_tweet_with_newsfeed(user=self.user1)
         url = TWEET_RETRIEVE_API.format(tweet.id)
 
         response = self.anonymous_client.get(url)
@@ -58,7 +58,7 @@ class TestApiTests(TestCase):
 
         self.create_comment(user=self.user1, tweet=tweet)
         self.create_comment(user=self.user2, tweet=tweet)
-        self.create_comment(user=self.user2, tweet=self.create_tweet(user=self.user1))
+        self.create_comment(user=self.user2, tweet=self.create_tweet_with_newsfeed(user=self.user1))
         response = self.anonymous_client.get(url)
         self.assertEqual(len(response.data['tweet']['comments']), 2)
 
@@ -166,7 +166,7 @@ class TestApiTests(TestCase):
 
         user = self.create_user('user')
         for i in range(page_size + last_page_size):
-            self.create_tweet(user)
+            self.create_tweet_with_newsfeed(user)
 
         # hasn't created_at__gt any created_at__lt
         response = self.anonymous_client.get(TWEET_LIST_API, {'user_id': user.id})
@@ -181,8 +181,8 @@ class TestApiTests(TestCase):
             last_time = response.data['results'][i]['created_at']
 
         # has created_at__gt
-        tweet1 = self.create_tweet(user)
-        tweet2 = self.create_tweet(user)
+        tweet1 = self.create_tweet_with_newsfeed(user)
+        tweet2 = self.create_tweet_with_newsfeed(user)
         response = self.anonymous_client.get(TWEET_LIST_API, {
             'user_id': user.id,
             'created_at__gt': first_time,

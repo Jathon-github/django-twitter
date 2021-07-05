@@ -16,7 +16,7 @@ class CommentApiTest(TestCase):
 
         self.user1, self.user1_client = self.create_user_and_client('user1')
         self.user2, self.user2_client = self.create_user_and_client('user2')
-        self.tweet = self.create_tweet(self.user1)
+        self.tweet = self.create_tweet_with_newsfeed(self.user1)
 
     def test_list(self):
         response = self.anonymous_client.get(COMMENT_URL)
@@ -30,7 +30,7 @@ class CommentApiTest(TestCase):
 
         self.create_comment(self.user1, self.tweet, 'first comment')
         self.create_comment(self.user2, self.tweet, 'second comment')
-        self.create_comment(self.user2, self.create_tweet(self.user2), 'third comment')
+        self.create_comment(self.user2, self.create_tweet_with_newsfeed(self.user2), 'third comment')
 
         response = self.anonymous_client.get(COMMENT_URL, {
             'tweet_id': self.tweet.id,
