@@ -13,6 +13,7 @@ class Comment(models.Model):
     tweet = models.ForeignKey(Tweet, on_delete=models.SET_NULL, null=True)
     content = models.CharField(max_length=127)
     created_at = models.DateTimeField(auto_now_add=True)
+    likes_count = models.IntegerField(default=0, null=True)
 
     class Meta:
         index_together = (('tweet', 'created_at'),)

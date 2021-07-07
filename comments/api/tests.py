@@ -102,3 +102,32 @@ class CommentApiTest(TestCase):
         response = self.user1_client.get(NEWSFEEDS_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['results'][0]['tweet']['comments_count'], 2)
+
+    def test_comments_count_with_cache(self):
+        response = self.user2_client.get(TWEET_DETAIL_URL.format(self.tweet.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['tweet']['comments_count'], 0)
+        self.assertEqual(self.tweet.comments_count, 0)
+
+        # create comment should update comments_count
+        comment = self.create_comment(self.user2, self.tweet)
+        self.tweet.refresh_from_db()
+        self.assertEqual(self.tweet.comments_count, 1)
+        response = self.user1_client.get(TWEET_LIST_URL, {'user_id': self.user1.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'][0]['comments_count'], 1)
+
+        # update comment shouldn't update comments_count
+        comment.content = 'new content'
+        comment.save()
+        self.tweet.refresh_from_db()
+        self.assertEqual(self.tweet.comments_count, 1)
+        response = self.user1_client.get(NEWSFEEDS_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'][0]['tweet']['comments_count'], 1)
+
+        # delete a comment will update comments_count
+        comment.delete()
+        response = self.user1_client.get(TWEET_LIST_URL, {'user_id': self.user1.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'][0]['comments_count'], 0)
