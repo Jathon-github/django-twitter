@@ -1,8 +1,7 @@
-from friendships.services import FriendshipService
 from newsfeeds.models import NewsFeed
+from newsfeeds.tasks import fanout_to_followers
 from twitter.cache import USER_NEWSFEEDS_PATTERN
 from utils.redis_helper import RedisHelper
-from newsfeeds.tasks import fanout_to_followers
 
 
 class NewsFeedService:
