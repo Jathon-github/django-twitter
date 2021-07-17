@@ -9,9 +9,9 @@ cache = caches['testing'] if settings.TESTING else caches['default']
 
 class FriendshipService:
     @classmethod
-    def get_followers(cls, user):
-        friendships = Friendship.objects.filter(to_user=user)
-        return [friendship.from_user_id for friendship in friendships]
+    def get_follower_ids(cls, user):
+        follower_ids = Friendship.objects.filter(to_user=user).values('from_user_id')
+        return [follower_id['from_user_id'] for follower_id in follower_ids]
 
     @classmethod
     def get_following_user_id_set(cls, user_id):
