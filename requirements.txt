@@ -26,6 +26,7 @@ django-filter==2.4.0
 django-model-utils==4.1.1
 django-notifications-hq==1.6.0
 django-oss-storage==1.1.1
+django-ratelimit==3.0.1
 djangorestframework==3.12.2
 httplib2==0.9.2
 hyperlink==17.3.1
