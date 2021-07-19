@@ -1,6 +1,8 @@
+from django.utils.decorators import method_decorator
 from newsfeeds.api.serializers import NewsFeedSerializer
 from newsfeeds.models import NewsFeed
 from newsfeeds.services import NewsFeedService
+from ratelimit.decorators import ratelimit
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from utils.pagination import EndlessPagination
@@ -13,6 +15,7 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
     def get_queryset(self):
         return NewsFeed.objects.filter(user=self.request.user)
 
+    @method_decorator(ratelimit(key='user', rate='5/s', method='GET', block=True))
     def list(self, request):
         user_id = request.user.id
         cached_newsfeeds = NewsFeedService.get_cached_newsfeeds(user_id)

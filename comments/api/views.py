@@ -5,9 +5,11 @@ from comments.api.serializers import (
     CommentSerializer,
     CommentSerializerForCreate,
 )
-from utils.permissions import IsObjectOwner
 from comments.models import Comment
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
 from utils.decorators import required_params
+from utils.permissions import IsObjectOwner
 
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -23,9 +25,8 @@ class CommentViewSet(viewsets.GenericViewSet):
         return [AllowAny()]
 
     @required_params(params=['tweet_id'])
+    @method_decorator(ratelimit(key='user', rate='10/s', method='GET', block=True))
     def list(self, request):
-        # tweet_id = request.query_params['tweet_id']
-        # comments = Comment.objects.filter(tweet_id=tweet_id).order_by('created_at')
         comments = self.filter_queryset(
             self.get_queryset(),
         ).order_by('created_at')
@@ -39,6 +40,7 @@ class CommentViewSet(viewsets.GenericViewSet):
             'success': True,
         }, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key='user', rate='3/s', method='POST', block=True))
     def create(self, request):
         data = {
             'user_id': request.user.id,
@@ -59,6 +61,7 @@ class CommentViewSet(viewsets.GenericViewSet):
                 CommentSerializer(comment, context={'request': request}).data,
         }, status=status.HTTP_201_CREATED)
 
+    @method_decorator(ratelimit(key='user', rate='5/s', method='POST', block=True))
     def destroy(self, request, pk):
         self.get_object().delete()
         return Response({
