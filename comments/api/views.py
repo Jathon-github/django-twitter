@@ -61,7 +61,7 @@ class CommentViewSet(viewsets.GenericViewSet):
                 CommentSerializer(comment, context={'request': request}).data,
         }, status=status.HTTP_201_CREATED)
 
-    @method_decorator(ratelimit(key='user', rate='5/s', method='POST', block=True))
+    @method_decorator(ratelimit(key='user', rate='5/s', method='DELETE', block=True))
     def destroy(self, request, pk):
         self.get_object().delete()
         return Response({
